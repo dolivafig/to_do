@@ -1,7 +1,6 @@
 const express = require('express');
 const path = require('path');
 const fs = require('fs');
-const notes = require('./db/db.json');
 
 const app = express();
 const PORT = 3001;
@@ -11,33 +10,37 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use(express.static('public'));
 
-app.get('/notes', (req, res) => {
+app.get('/notes', async (req, res) => {
     console.log(`${req.method} request received`)
     res.sendFile(path.join(__dirname, 'public/notes.html'))
 });
 
 
-app.get('/api/notes', (req, res) => {
+app.get('/api/notes', async (req, res) => {
+    const notes = require('./db/db.json');
     console.log(`${req.method} request received`)
-    
-    res.status(200).json(notes);
+    console.log(notes);
+    const data = fs.readFileSync('./db/db.json', 'utf8', { encoding: 'utf8' });
+    const parsedNotes = JSON.parse(data);
+
+    console.log(data)
+    res.json(parsedNotes);
     return;
 });
 
-app.post('/api/notes', (req, res) => {
+app.post('/api/notes', async (req, res) => {
 
     console.log(`${req.method} request received`)
-try{
-    const { title, text } = req.body;
-        const newNote = {title, text};
-        fs.readFileSync('./db/db.json', 'utf8', { encoding: 'utf8' });
+    try {
+        const { title, text } = req.body;
+        const newNote = { title, text };
         const data = fs.readFileSync('./db/db.json', 'utf8', { encoding: 'utf8' });
-        
+
         const parsedNotes = JSON.parse(data);
         parsedNotes.push(newNote);
         fs.writeFileSync('./db/db.json', JSON.stringify(parsedNotes, null, 4));
-        
-        res.send(parsedNotes);
+
+        res.json(parsedNotes);
         console.log(parsedNotes);
         return;
     } catch (err) {
@@ -46,16 +49,22 @@ try{
     }
 });
 
-// app.delete('/api/notes/:title', (req, res) => {
+// app.delete('/api/notes/:title', async (req, res) => {
 //     console.log(`${req.method} request received`)
-//     try{
-// const reqId = req.params.title;
-// notes.findByPk(reqId)
-// res.send(notes);}
-// catch (err) {
-//     console.log(err);
-//     res.status(500).json(err);
-// }});
+//     try {
+//         const reqId = req.params.title;
+//         const data = fs.readFileSync('./db/db.json', 'utf8', { encoding: 'utf8' });
+//         const parsedNotes = JSON.parse(data);
+//         delete parsedNotes[reqId];
+//         fs.writeFileSync('./db/db.json', JSON.stringify(parsedNotes, null, 4));
+//         res.send(parsedNotes);
+//         return;
+//     }
+//     catch (err) {
+//         console.log(err);
+//         res.status(500).json(err);
+//     }
+// });
 
 app.get('*', (req, res) => res.sendFile(path.join(__dirname, 'public/index.html')));
 
